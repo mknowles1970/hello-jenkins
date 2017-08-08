@@ -1,0 +1,51 @@
+AWS management console
+Amazon Elastic Compute Cloud (EC2) VM's in the cloud - instance ami
+Amazon Machine Image (AMI)
+Elastic IP addresses (EIPs)
+AWS Identity and Access Management (IAM)
+Elastic Load Balancing automatically distributes incoming application traffic across multiple Amazon EC2 instances. (ELB)
+Amazon Simple Storage Service (Amazon S3), provides developers and IT teams with secure, durable, highly-scalable cloud storage (S3) buckets stores to at least 2 datacenters a little slow
+Amazon Relational Database Service (Amazon RDS)
+virtual private cloud - Provides an isolated virtual network for your virtual servers(VPC) allows VPN creation from local servers to servers in AWS
+AWS Lambda - Runs your code on virtual servers from Amazon EC2 in response to events.
+Amazon ECS Provides Docker containers on virtual servers from Amazon EC2
+A security group acts as a virtual firewall for your instance to control inbound and outbound traffic.
+A security group acts as a virtual firewall for your instance to control inbound and outbound traffic
+Route 53 is AWS’s DNS service
+Amazon S3 Scalable storage in the AWS cloud.
+You store your data in containers called buckets
+Amazon Elastic Block Store (EBS) Network attached storage volumes for your virtual servers.
+Amazon Glacier Low-cost archival storage. - used for archiving - you create vaults (like buckets in S3)
+Instances are virtual servers that can run applications
+Spot instances - bid for a price on your instance (cheaper by 90%)
+Each region contains multiple distinct locations called Availability Zones
+To make the subnet public, let’s add an Internet Gateway and route all outbound traffic through it
+etcd is a distributed, consistent key-value store used for storing shared configuration and information in a cluster
+Multiple availability zones = different data centers
+old type scaling is vertical - cloud scaling is horizontal scale out
+Cloudwatch - Monitoring via alarms
+cloudfront - webserver cache
+Autoscaling Cloudformation - templating a full stack of VM's
+Amazon SNS - Mails alerts
+Amazon SES - Mailing system for mass emails (like authsmtp.com)
+
+AutoScaling
+download autoscaling tools then run
+as-create-launch-config 
+as-create-auto-scaling-group
+as-put-scaling-policy
+
+CloudBerry Explorer for Windows allows you to have a GUI explorer view on S3 Buckets
+
+Coping a file to "S3 bucket"
+----------------------------
+yum install s3cmd
+s3cmd ls s3://msm-private-repo/talend/
+s3cmd put Patch_20160920_TPS-1583_v1-6.2.1.zip s3://msm-private-repo/talend/
+url - 's3://msm-private-repo/talend/Patch_20160920_TPS-1583_v1-6.2.1.zip'
+
+https://eu-west-1.console.aws.amazon.com/ec2/v2/home?region=eu-west-1#
+https://eu-west-1.console.aws.amazon.com/ec2/v2/home?region=eu-west-1#Instances:
+https://console.aws.amazon.com/route53/home?region=us-east-1#Dashboard:
+
+C:\Program Files\Git\usr\bin>ssh.exe -i 'C:\Users\ssh\aws1st.pem' mark@10.0.0.1
