@@ -1,0 +1,155 @@
+Salt master: the central management system.
+Salt minion: a managed system.
+Execution modules are the workhorses of Salt. They do the work on the system to perform various tasks, such as manipulating files and restarting services.
+Grains are static information SaltStack collects about the underlying managed system
+a re-usable configuration template, called a state (yaml)
+A top file is the standard configuration file for the environment top.sls (yaml)
+a "pillar" file is like heira in puppet
+default files location /srv/salt/
+/etc/salt/master, and /etc/salt/minion config files
+
+Centos install 
+--------------
+sudo yum install https://repo.saltstack.com/yum/redhat/salt-repo-latest-1.el7.noarch.rpm
+yum clean expire-cache
+Install the salt-minion, salt-master, or other Salt components:
+sudo yum install salt-master
+sudo yum install salt-minion
+sudo yum install salt-ssh
+sudo yum install salt-syndic
+sudo yum install salt-cloud
+sudo yum install salt-api
+open port 4505 & 4506 on firewall
+----------------
+
+Minion Install - Ubuntu
+-----------------------
+apt-get install inetutils-tools
+apt-get install iputils-ping
+apt-get install telnet
+apt-get install netstat
+apt-get install vi
+apt-get install traceroute
+apt-get install vim
+apt-get install salt-minion
+need a host entry to the salt master "salt"
+service salt-minion start
+---------------------------
+
+salt-key --list-all - list all certificates on salt master
+salt-key -A - accept all pending keys
+salt '*' test.ping - runs on every minion test.ping tells the minion to run the test.ping function.
+salt '*' disk.usage - runs on every minion a disk query
+salt '*' sys.doc - what functions are available on the minions
+salt '*' cmd.run 'ls -l /etc' - run a command on all minions
+salt '*' network.interfaces - list all minion IP details
+salt '*' cmd.run 'ls -l /etc' - run a command on a minion
+salt-call pkg.install cowsay - run the command a salt master would send to a minion - but directly on the minion
+salt <minion-id> grains.ls - to list all grains on a given minion
+salt 'minion1' state.show_sls <example> - To view the order in which Salt states are applied from the examples.sls file 
+
+Salt state functions provide a mechanism to display the changes that will be made during a live run. The return information will show states that will be applied in yellow and the result is reported as None.
+sudo salt 'minion1' state.apply examples test=True
+
+Example state file
+------------------
+install_network_packages:
+  pkg.installed:
+    - pkgs:
+      - rsync
+      - lftp
+      - curl
+save it in a file called nettools.sls
+run it with salt '*' state.apply nettools
+
+Example top file
+----------------
+base:
+  '*':
+    - common
+  'minion1':
+    - nettools
+save it in a file called top.sls
+run it with salt '*' state.apply
+
+Example to create a directory
+-----------------------------
+create my_new_directory:
+ file.directory:
+   - name: /opt/my_new_directory
+   - user: root
+   - group: root
+   - mode: 755
+save it in a file called my_new_directory.sls
+run it with salt '*' state.apply my_new_directory
+
+Example start a service and make sure it's running
+--------------------------------------------------
+Install mysql and make sure the mysql service is running:
+  pkg.installed:
+    - name: mysql
+  service.running:
+    - name: mysql
+    - enable: True
+
+Example create a user
+---------------------
+user account for pete:
+  user.present:
+    - name: pete
+    - shell: /bin/bash
+    - home: /home/pete
+    - groups:
+      - sudo
+
+Example add a host entry
+------------------------
+myserver in hosts file:
+  host.present:
+    - name: myserver
+    - ip: 192.168.0.42
+
+Example loops
+-------------
+create users
+{% for usr in ['moe','larry','curly'] %}
+{{ usr }}:
+  user.present
+{% endfor %}
+
+directrory permissions
+{% for DIR in ['/dir1','/dir2','/dir3'] %}
+{{ DIR }}:
+  file.directory:
+    - user: root
+    - group: root
+    - mode: 774
+{% endfor %}
+
+Example copy template file from salt master
+-------------------------------------------
+install network packages:
+  pkg.installed:
+    - pkgs:
+      - rsync
+      - lftp
+      - curl
+
+copy lftp config file:
+  file.managed:
+    - name: /etc/lftp.conf
+    - source: salt://_tmpl_lftp.conf
+
+Example append a line to a file
+-------------------------------
+install network packages:
+  pkg.installed:
+    - pkgs:
+      - rsync
+      - lftp
+      - curl
+
+update lftp conf:
+  file.append:
+    - name: /etc/lftp.conf
+    - text: set net:limit-rate 100000:500000
