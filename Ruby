@@ -1,0 +1,276 @@
+2+6 
+=>8
+
+"Mark".reverse
+=>"kraM"
+
+"Mark".length
+=>4
+
+"Mark"*5
+=> "MarkMarkMarkMarkMark"
+
+40.to_s.reverse
+=>"04"
+to_s converts values to strings.
+to_i converts values to integers (numbers.)
+to_a converts values to arrays. eg [12, 47, 35]
+
+[12, 47, 35].max
+=> 47
+
+ticket=[12, 47, 35]
+ticket
+=> [12, 47, 35]
+
+Sort the array permanently
+ticket.sort!
+
+print poem - displays the variable poem contents
+puts poem - also prints it but with a blank line after it
+poem['toast']='honeydew' - replaces text in variable poem
+poem.downcase
+poem.upcase
+poem.delete
+
+Dir.entries "/" - list out everything in the / directory
+Dir["/*.txt"]
+
+print File.read("/comics.txt") - display contents of a file
+
+FileUtils.cp('/comics.txt','/Home/comics.txt') - copy a file
+
+File.open("/Home/comics.txt","a") do |f| 
+  f << "Cat and Girl: http://catandgirl.com/"
+  end
+Append to the end of an existing file
+
+File.mtime("/Home/comics.txt") - displays file modified time
+File.mtime("/Home/comics.txt").hour - displays the file modified time hour only
+
+require 'popup' - loads library called 'popup'
+
+block of comments
+-----------------
+=begin
+I'm a comment
+me too
+=end
+
+display variables to screen
+puts "Your name is #{first_name} #{last_name} and you're from #{city}, #{state}!"
+
+ask a question and capitialize it
+print "What's your first name?"
+
+first_name = gets.chomp
+  #strips blank line added to the end of the input
+first_name.capitalize!
+
+if
+---
+
+if
+elsif
+else
+end
+if 1 < 2
+  print "I'm getting printed because one is less than two!"
+end
+
+find and replace in a string with gsub!
+if user_input.include? "s"
+	user_input.gsub!(/s/, "th")
+else  
+	puts "Nothing to do here!"
+end
+
+loops
+------
+while counter < 11
+	puts counter
+	counter += 1
+end
+
+count: for num in 1...10 means "go up to but don't include 10." 
+If we use two dots, this tells Ruby to include the highest number in the range
+for num in 1...10
+  
+	puts num
+
+end
+
+i = 20
+
+loop do
+  
+	i -= 1
+  
+	print "#{i}"
+  
+	break if i <= 0
+
+end
+
+array's
+-------
+array = [1,2,3,4,5]
+
+
+array.each do |x|
+  
+	x += 10
+  
+	print "#{x}"
+
+end
+
+10.times { print "Mark" }
+[1, 2, 3].each { |x| puts x * 10 }
+95.upto(100) { |num| print num, " " }
+100.downto(95) { |num| print num, " " }
+
+split text via dilimiter
+text.split(",")
+tells Ruby to split up the string text whenever it sees a comma.
+
+my_2d_array = [[1, 2, 3, 4], [ "a", "b", "c", "d" ]]
+
+hashes
+-------
+my_hash = { "name" => "Eric",
+
+  "age" => 26,
+
+  "hungry?" => true
+
+}
+
+
+
+puts my_hash["name"]
+
+puts my_hash["age"]
+
+puts my_hash["hungry?"]
+
+pets = Hash.new
+pets["Stevie"] = "cat"
+# Adds the key "Stevie" with the
+# value "cat" to the hash
+
+friends = ["Milhouse", "Ralph", "Nelson", "Otto"]
+
+
+
+family = { "Homer" => "dad",
+
+  "Marge" => "mom",
+
+  "Lisa" => "sister",
+
+  "Maggie" => "sister",
+
+  "Abe" => "grandpa",
+
+  "Santa's Little Helper" => "dog"
+
+}
+
+
+
+friends.each { |x| puts "#{x}" }
+
+family.each { |x, y| puts "#{x}: #{y}" }
+
+create a new hash and give it a default value of 0
+frequencies = Hash.new(0)
+
+
+loop through a hash
+matz = { "First name" => "Yukihiro",
+
+  "Last name" => "Matsumoto",
+
+  "Age" => 47,
+
+  "Nationality" => "Japanese",
+
+  "Nickname" => "Matz"
+}
+
+
+
+matz.each do |key, value|
+
+    puts matz[key]
+
+end
+
+colors = {"red" => 2, "blue" => 3}
+colors["blue"] += 1
+puts colors["blue"]
+Will print the answer 4
+
+methods-procedures/sub routines
+-------------------------------
+def what_up(greeting, *bros)
+
+   bros.each { |bro| puts "#{greeting}, #{bro}!" }
+
+end
+
+ 
+what_up("What up", "Justin", "Ben", "Kevin Sorbo")
+
+Blocks
+------
+
+A Ruby block is just a bit of code that can be executed. Block syntax uses either do..end or curly braces ({})
+
+1.times do
+
+  puts "I'm a code block!"
+
+end
+
+
+
+1.times { puts "As am I!" }
+
+Symbols and selection
+---------------------
+grades = { alice: 100,
+  bob: 92,
+  chris: 95,
+  dave: 97
+}
+
+grades.select {|name, grade| grade < 97}
+# ==> {:bob=>92, :chris=>95}
+
+grades.select { |k, v| k == :alice }
+# ==> {:alice=>100}
+
+Ternary conditional expression
+------------------------------
+puts 3 < 4 ? "3 is less than 4!" : "3 is not less than 4."
+
+Set a constant
+--------------
+favorite_book ||= "Cat's Cradle"
+
+Case statement
+--------------
+case variable
+when value1 then #Do something!
+when value2 then #Do something else!
+...
+when value9 then #Do another thing!
+else
+  # Do the default thing!
+end
+
+List 'Gems' installed
+---------------------
+gem query --local
