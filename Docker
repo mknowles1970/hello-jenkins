@@ -1,0 +1,99 @@
+Install - Docker Engine
+-----------------------
+yum update -y
+yum install epel-release -y
+yum install gcc -y
+cd /etc/yum.repos.d
+vi docker.repo
+
+	[dockerrepo]
+	name=Docker Repository
+	baseurl=https://yum.dockerproject.org/repo/main/centos/$releasever/
+	enabled=1
+	gpgcheck=1
+	gpgkey=https://yum.dockerproject.org/gpg
+
+yum install docker-engine -y
+systemctl start docker
+docker run hello-world
+groupadd docker
+usermod -aG docker vagrant
+chkconfig docker on
+/var/lib/docker
+------------------------
+
+Install - Docker Machine
+------------------------
+$ curl -L https://github.com/docker/machine/releases/download/v0.7.0/docker-machine-`uname -s`-`uname -m` > /usr/local/bin/docker-machine && \
+chmod +x /usr/local/bin/docker-machine
+---------------------------------------
+
+ctrl-p ctrl-q - to detach from a container and keep it running
+docker run ubuntu /bin/echo 'Hello world'
+docker run -t -i ubuntu /bin/bash - runs interactively a bash in container
+docker run -d ubuntu /bin/sh -c "echo hello world" - run's container in the background
+docker logs <container name> - looks inside the container
+docker logs -f cui   - check logs for cui
+docker stop <container name> - stops the running container
+docker start <container name> - starts a stopped container
+docker restart <container name> - restarts a container
+docker exec -it <container name> bash - runs a shell on the container 
+docker run -d -P training/webapp python app.py - run in background 
+		-P map ports inside container to our host 
+		use webapp image and run the python app.py command
+docker port <container name> 500 - shows what external port is mapped to 5000
+docker top <container name> - shows processes running within the container
+docker inspect <container name> - shows container config
+docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' <container name> 
+		Returns IP address of container
+docker rm <container name> - removes the container
+docker images - list images you have local on your host
+docker pull <image> - to download and image and store it locally
+docker search centos - searches for docker images from the command line
+docker commit -m "Added motd" -a "Mark Knowles" <ID of image you changed> <output image name>:v2
+docker build -t <new image name> <location of output file> - creates a new image from Dockerfile
+	Dockerfile
+		FROM ubuntu
+		MAINTAINER Mark Knowles <mknowles@williamhill.co.uk>
+		RUN apt-get update && apt-get install -y ruby ruby-dev
+		RUN gem install sinatra
+docker tag - to rename a docker image
+docker rmi <id or name> - remove an image 
+docker run -d -P --name web training/webapp python app.py - to name a container --name
+docker network ls - list docker internal networks
+docker network create -d bridge <my-bridge-network> - creates a new network using the bridge driver
+docker network inspect <my-bridge-network> - shows contains of network config
+docker run -d --net=my-bridge-network --name db training/postgres
+	runs a docker image (-d) in the background
+	(--net < >) on this network
+ 	(--name <>) give it this name "db"
+	using this image
+docker network connect my-bridge-network web - connect the "web" container to the "my-bridge-network"
+docker run -d -P --name web -v /webapp training/webapp python app.py 
+	- to specify a volumne to load at startup use the -v /<volumn name>
+	-v /src/webapp:/opt/webapp mounts a directory from the host into the container
+		/srv/webapp is on the host
+docker history <image name> - shows the different layers that build up an image
+docker network disconnect my-bridge-network <container> - remove a container from a network
+docker network rm <network> - to remove the network
+docker stats - real time stats of running containers like top
+docker rm $(docker ps -qa) - remove all containers
+docker volume create --name db-data - create a container volume called db-data
+CS Docker Engine is the commerically supported version
+Universal Control Plane - GUI frontend for Docker
+DTR Docker trusted Registry - docker image repo
+zookeeper is a discovery service for cluster/HA
+
+Compose starts services in reverse order they appear in the file. 
+So, if you want a service to start before all the others, make it the last service in the file file.
+
+Kitematic - GUI frontend to managing containers
+
+When deployed by puppet - the docker startup service is defined in /etc/systemd/system
+
+docker-machine version - docker-machine version number
+docker-machine create 
+docker-machine ip - list IP's of docker hosts
+docker-machine-stop  - stops the docker host
+docker-machine-start - starts the docker host
+docker-machine env <container> - switch to a given container
