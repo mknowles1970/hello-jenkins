@@ -1,0 +1,199 @@
+vagrant init hashicorp/precise64 - create a vm in virtualbox
+vagrant up - start it
+vagrant ssh - connect to it
+vagrant destroy <id> - remove it
+vagrant box add ubuntu/trusty64 - add a new 'box' from hashicorp catalogue
+Vagrantfile - box's configuration file
+/vagrant - is shared between windows and linux
+vagrant reload --provision - reads the provision line for installs
+vagrant share - share your vm anywhere to any browser via acccount on "HashiCorp's Atlas"
+vagrant suspend - suppend vm in virtual box
+vagrant halt - power off vm in virtual box
+vagrant box list - lists the boxes that have been downloaded
+vagrant box remove <name> - removes the downloaded box files
+vagrant global-status - shows details of all running vagrant vm's
+vagrant snapshot save <name> - takes a snapshot called <name>
+vagrant snapshot restore <name> - restores the named snapshot
+vagrant snapshot list - lists the snapshots taken
+vagrant snapshot delete <name> - deletes the snapshot <name>
+vagrant status - state of the machines Vagrant is managing
+vagrant version - version of vagrant
+vagrant list-commands - shows a list of all vagrant commands
+vagrant package --base <my-virtual-machine> - create a base build
+vboxmanage list vms (VBoxManage.exe)
+Vagrant package --base "Vagrant Client" --output c:\base.box
+vagrant init
+vagrant list-commands
+vagrant status
+vagrant global-status
+VirtualBox (Linux)
+vagrant reload
+"c:\program files\oracle\virtualbox\vboxmanage.exe" list ostypes - list supported vbox O/S types
+
+bootstrap.sh - script to install components eg apache
+
+landrush for DNS on vagrant ```vagrant plugin install Landrush
+
+#!/usr/bin/env bash
+
+apt-get update
+apt-get install -y apache2
+if ! [ -L /var/www ]; then
+  rm -rf /var/www
+  ln -fs /vagrant /var/www
+fi
+
+run the script from the Vagrantfile
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "hashicorp/precise64"
+  config.vm.provision :shell, path: "bootstrap.sh"
+end
+
+The "provision" line tells Vagrant to use the shell provisioner
+to setup the machine, with the bootstrap.sh file. 
+The file path is relative to the location of the project root 
+(where the Vagrantfile is).
+
+If the guest machine is already running from a previous step, 
+vagrant reload --provision
+will quickly restart your virtual machine, skipping the initial 
+import step. The provision flag on the reload command instructs 
+Vagrant to run the provisioners, since usually Vagrant will 
+only do this on the first vagrant up.
+
+setup port forwarding in the VagrantFile
+  config.vm.box = "hashicorp/precise64"
+  config.vm.provision :shell, path: "bootstrap.sh"
+  config.vm.network :forwarded_port, guest: 80, host: 4567
+
+
+Puppet provisioner 
+-------------------
+
+Vagrant.configure("2") do |config|
+  config.vm.provision "puppet"
+end
+
+By default, Vagrant will configure Puppet to look for 
+manifests in the "manifests" folder relative to the project root, 
+and will use the "default.pp" manifest as an entry-point. 
+This means, if your directory tree looks like the one below, 
+you can get started with Puppet with just that one line in your 
+Vagrantfile.
+
+$ tree
+.
+|-- Vagrantfile
+|-- manifests
+|   |-- default.pp
+
+
+Vagrantfile
+-----------
+Vagrant.configure(2) do |config|
+		
+	config.vm.box = "ubuntu/trusty64"
+  	config.vm.provision :shell, path: "bootstrap.sh"
+	config.vm.network :forwarded_port, guest:80, host: 4567
+	
+	config.vm.provider "virtualbox" do |vb|
+		vb.gui = true
+		vb.name = "give the host a name here"
+	end
+end
+
+Creating a Base build Vagrant box from existing VM
+--------------------------------------------------
+Create a vagrant user in the VM
+visudo - put this line at the end of the file vagrant ALL=(ALL) NOPASSWD:ALL
+Shutdown the VM
+Clone it - reset the MAC address
+Repackage the VM into a .box file
+	vagrant package --base VagrantBase
+Add the box into Vagrant 
+	vagrant box add VagrantBase VagrantBase.box
+This now will “download” the box into your Vagrant 
+install allowing it to be initiate this from any folder
+Initialize the new Vagrant environment
+	vagrant init VagrantBase
+This will create Vagrantfile
+Start the vm
+	vagrant up
+putty onto it via 127.0.0.1 port 2222
+
+
+vagrant file
+---------------
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure(2) do |config|
+  # The most common configuration options are documented and commented below.
+  # For a complete reference, please see the online documentation at
+  # https://docs.vagrantup.com.
+
+  # Every Vagrant development environment requires a box. You can search for
+  # boxes at https://atlas.hashicorp.com/search.
+  config.vm.box = "hashicorp/precise64"
+
+  # Disable automatic box update checking. If you disable this, then
+  # boxes will only be checked for updates when the user runs
+  # `vagrant box outdated`. This is not recommended.
+  # config.vm.box_check_update = false
+
+  # Create a forwarded port mapping which allows access to a specific port
+  # within the machine from a port on the host machine. In the example below,
+  # accessing "localhost:8080" will access port 80 on the guest machine.
+  # config.vm.network "forwarded_port", guest: 80, host: 8080
+
+  # Create a private network, which allows host-only access to the machine
+  # using a specific IP.
+  # config.vm.network "private_network", ip: "192.168.33.10"
+
+  # Create a public network, which generally matched to bridged network.
+  # Bridged networks make the machine appear as another physical device on
+  # your network.
+  # config.vm.network "public_network"
+
+  # Share an additional folder to the guest VM. The first argument is
+  # the path on the host to the actual folder. The second argument is
+  # the path on the guest to mount the folder. And the optional third
+  # argument is a set of non-required options.
+  # config.vm.synced_folder "../data", "/vagrant_data"
+
+  # Provider-specific configuration so you can fine-tune various
+  # backing providers for Vagrant. These expose provider-specific options.
+  # Example for VirtualBox:
+  #
+  # config.vm.provider "virtualbox" do |vb|
+  #   # Display the VirtualBox GUI when booting the machine
+  #   vb.gui = true
+  #
+  #   # Customize the amount of memory on the VM:
+  #   vb.memory = "1024"
+  # end
+  #
+  # View the documentation for the provider you are using for more
+  # information on available options.
+
+  # Define a Vagrant Push strategy for pushing to Atlas. Other push strategies
+  # such as FTP and Heroku are also available. See the documentation at
+  # https://docs.vagrantup.com/v2/push/atlas.html for more information.
+  # config.push.define "atlas" do |push|
+  #   push.app = "YOUR_ATLAS_USERNAME/YOUR_APPLICATION_NAME"
+  # end
+
+  # Enable provisioning with a shell script. Additional provisioners such as
+  # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
+  # documentation for more information about their specific syntax and use.
+  # config.vm.provision "shell", inline: <<-SHELL
+  #   sudo apt-get update
+  #   sudo apt-get install -y apache2
+  # SHELL
+end
+
