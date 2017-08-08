@@ -1,0 +1,145 @@
+https://stackoverflow.com/questions/36850485/how-to-trigger-a-jenkins-2-0-pipeline-job-from-a-github-pull-request
+https://jenkins.io/doc/book/pipeline/syntax/
+https://jenkins.io/doc/pipeline/steps/
+
+install java
+install git
+download jenkins war
+java -jar jenkins.war
+http://127.0.0.1:8080 (enter password)
+install plugins
+install github pull requester plugin - https://wiki.jenkins.io/display/JENKINS/GitHub+pull+request+builder+plugin
+
+on github repo
+
+Your github and Jenkins must be able to talk to each other.
+On Github
+create a github Personal Access Token (PAT) with relevant rights.
+git - settings - personal settings
+<secret>
+For your repo, create a webhook with 
+URL as YourJenkinsURL/github-webhook/
+Choose ‘Let me select individual events’ and check ‘Pull Request’ 
+Add a Jenkinsfile to the root folder of your repo. For testing purpose you could put content as a basic hello world like below
+    pipeline {
+        agent any
+        stages {
+            stage('Test') {
+                steps {
+                    echo 'Hello World ...'
+                }
+            }
+        }
+    }
+
+on jenkins
+check path to Git.exe - Manage Jenkins >Global Tool Configuration >Path to Git executable 
+If you specify both, the Integration Token Credential ID will take preference.
+Jenkins – Credentials 
+Add github Personal Access Token (PAT) as a ‘secret text’ credential.
+Add github username-password as ‘username-password’ credential. 
+Jenkins > Credentials > System > Global Credentials (or whatever group you want to have access or your access allow) > Add Credentials.
+Then you add a "Secret Text", and give it an ID and description and put the token in the "secret" field. That's what you'll be using / selecting in the Integration Token Credential ID.
+
+jenkins configuration - 
+Manage Jenkins – Configure System 
+Github – Github Servers : This is part of the Github plugin. Add a github server. ‘API URL’ It will default to https://api.github.com. If you are using enterprise github, replace with enterprise github url followed by /api/v3. For credential select the PAT option. Test the connection. ‘Manage Hooks’ is checked. 
+
+GitHub Pull Request Builder : for ‘GitHub Server API URL’ use same url as specified in Github Server section. Leave ‘Shared Secret’ blank. For credentials use ‘username-password’ credential. Test credentials to ensure its working. In my settings, ‘Auto-manage webhooks’ was checked. 
+
+Pipeline Job 
+Create a new item using ‘Pipeline’ option. Note: This is the vanilla Pipeline job, not Multibranch Pipeline.
+General Section: Check ‘Github Project’ – Project URL : Enter your github repo url 
+Build Triggers: Check ‘GitHub Pull Request Builder’ 
+For ‘GitHub API credentials’ select option you set for GitHub pull request builder in ‘Manage Jenkins – Configure System’ screen 
+For admin list: add your username 
+Check Use github hooks for build triggering 
+Pipeline: 
+Select ‘Pipeline Script from SCM’. Note this assumes that the root folder of your repo will contain a ‘Jenkinsfile’ 
+SCM: Select ‘Git’ 
+Repositories – enter repo detail. For credentials use ‘username-password’ based credentials. 
+Click Advanced and add refspec as +refs/pull/*:refs/remotes/origin/pr/*
+Branch – should be ${sha1}
+Script Path: defaulted to Jenkinsfile, leave as is. 
+Lightweight Checkout - Uncheck this (https://github.com/jenkinsci/ghprb-plugin/issues/507)
+
+Example Jenkinsfile
+-------------------
+Jenkinsfile (Declarative Pipeline)
+pipeline {
+    agent any
+    stages {
+        stage('Test') {
+            steps {
+                sh 'echo "Fail!"; exit 1'
+            }
+        }
+    }
+    post {
+        always {
+            echo 'This will always run'
+        }
+        success {
+            echo 'This will run only if successful'
+        }
+        failure {
+            echo 'This will run only if failed'
+        }
+        unstable {
+            echo 'This will run only if the run was marked as unstable'
+        }
+        changed {
+            echo 'This will run only if the state of the Pipeline has changed'
+            echo 'For example, if the Pipeline was previously failing but is now successful'
+        }
+    }
+}
+
+Jenkinsfile - docker
+--------------------
+Jenkinsfile (Declarative Pipeline)
+pipeline {
+    agent {
+        docker { image 'node:7-alpine' }
+    }
+    stages {
+        stage('Test') {
+            steps {
+                sh 'node --version'
+            }
+        }
+    }
+}
+
+Three stage jenkins file
+------------------------
+Jenkinsfile (Declarative Pipeline)
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Building'
+            }
+        }
+        stage('Test') {
+            steps {
+                echo 'Testing'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo 'Deploying'
+            }
+        }
+    }
+}
+
+
+agent indicates that Jenkins should allocate an executor and workspace for this part of the Pipeline.
+
+stage describes a stage of this Pipeline.
+
+steps describes the steps to be run in this stage
+
+sh executes the given shell command
