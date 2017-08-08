@@ -1,0 +1,1029 @@
+
+tru-strap creates the custom facts before the puppet run
+
+# facter | grep -i init
+init_env => dev2-dwh
+init_eyamlprivkeyfile => /root/.eyaml/private_key.pkcs7.pem
+init_eyamlpubkeyfile => /root/.eyaml/public_key.pkcs7.pem
+init_moduleshttpcache => https://s3-eu-west-1.amazonaws.com/msm-public-repo/puppet/modules
+init_repobranch => master
+init_repodir => /opt/dwh-role-configs
+init_reponame => dwh-role-configs
+init_repoprivkeyfile => /root/.ssh/id_rsa
+init_repouser => MSMFG
+init_role => talend_cmdline
+
+dev2-dwh/talend_cmdline
+talend_cmdline
+dev2-dwh
+
+tru-strap sets up puppet librian and downloads from Git the puppet modules and sets the location mappings
+cd /home/mark/github/msm-markknowles/dwh-role-configs/puppet/Puppetfiles/dev2-dwh
+vi Puppetfile.talend_cmdline
+[mark@centos7 dev2-dwh]$ cat Puppetfile.talend_cmdline
+# Role specific modules
+mod "MSMFG/talend",
+  :git => "git@github.com:MSMFG/puppet-talend.git"
+mod "MSMFG/edw",
+  :git => "git@github.com:lucadevitis-msm/puppet-edw.git"
+mod "MSMFG/mountdevice",
+  :git => "git@github.com:MSMFG/puppet-mountdevice.git",
+  :ref => "1.0.13"
+mod "MSMFG/skydns_client",
+  :git => "git@github.com:MSMFG/puppet-skydns-client.git",
+  :ref => "0.1.2"
+mod "MSMFG/puppet-java",
+  :git => "git@github.com:MSMFG/puppet-java.git",
+  :ref => "0.0.5"
+mod "MSMFG/ifetoolbelt",
+  :git => "git@github.com:MSMFG/puppet-ife-toolbelt.git",
+  :ref => "1.7.1"
+
+interpolate facts and built-in variables from puppet = "%{::init_env}/%{::init_role}"
+in puppet these would be $::init_env and $::init_role
+
+/home/mark/github/msm-markknowles/dwh-role-configs/puppet/manifests/site.pp
+
+[mark@centos7 manifests]$ cat site.pp
+node default {
+  hiera_include('classes')
+}
+
+/home/mark/github/msm-markknowles/dwh-role-configs/puppet
+[mark@centos7 puppet]$ cat hiera.yaml
+---
+:backends:
+  - eyaml
+  - yaml
+:eyaml:
+  :datadir: /etc/puppet/hieradata
+  :pkcs7_private_key: /etc/puppet/secure/keys/private_key.pkcs7.pem
+  :pkcs7_public_key:  /etc/puppet/secure/keys/public_key.pkcs7.pem
+:yaml:
+  :datadir: /etc/puppet/hieradata
+:hierarchy:
+  - "%{::init_env}/%{::init_role}"
+  - "%{::init_role}"
+  - "%{::init_env}"
+  - common
+
+dev2-dwh/talend_cmdline
+
+puppet will then run through the "role" manifests and each class run the required profile etc
+
+Create a module skelington
+--------------------------
+puppet module generate learning-webapp --skip-interview
+
+run a single manifest local on an instance
+------------------------------------------
+#puppet apply -e "include job_scheduler::jobscheduler"
+
+Check Hiera value after a puppet run
+------------------------------------
+hiera -c /etc/puppet/hiera.yaml job_scheduler::user::user ::init_env=dev2-dwh ::init_role=jobscheduler
+
+Archive resource
+----------------
+Path = temporary path the extract will be extracted into
+source = were the zip file is coming from
+extract_path = final destination of the unpacked files (from the temporary location)
+
+check agent is running
+----------------------
+puppet resource service puppet ensure=running enable=true
+
+certs
+-----
+puppet agent --test (request cert for agent)
+puppet agent --test --server <puppet master server>
+puppet cert clean <server> (do the puppet master)
+rm -f /home/its/.puppet/ssl/cert (do this on the client
+puppet agent --test (register for the first time)
+puppet cert list -all
+puppet agent --configprint server
+puppet cert --sign
+puppet config print certname
+puppet node purge itsjenk01.dwp.gov.uk
+
+service stop
+------------
+systemctl stop pe-puppetdb.service
+systemctl stop pe-puppet-dashboard-workers.service
+systemctl stop pe-puppet.service
+systemctl stop pe-puppetserver.service
+
+systemctl restart puppet
+
+Remove puppet enterprise
+------------------------
+/opt/puppet/bin/puppet-enterprise-uninstaller -p -d
+
+Log files
+---------
+/var/log/pe-puppetserver/puppetserver.log
+
+File layouts
+------------
+You could put all your Puppet manifests in a single file, and it would make no difference to Puppet. But it's much better and easier to manage if you break them up into several files. Conventionally, the top-level "master" file that includes everything else is named site.pp.You should put your node declarations in a file named nodes.pp.
+
+System details of host
+----------------------
+facter
+
+Including Ruby code
+-------------------
+<%=  %>
+Anything between these is ruby
+
+Accessing Facts
+---------------
+Local variable
+class system {
+	$operatingsystem = 'MyOS'
+	notify { "This operating system is: ${operatingsystem}": }
+}
+
+Top scope variable from fact
+class truesystem {
+	$operatingsystem = 'MyOS'
+	notify { "This true operating system is: ${::operatingsystem}": }
+}
+
+Path to itspup01 manifests
+--------------------------
+/etc/puppetlabs/production
+
+Create a basic module structue
+------------------------------
+puppet module generate <USERNAME>-<MODULENAME>
+
+Puppet report config and location
+---------------------------------
+puppet config print report true
+
+puppet config print reportdir
+/opt/puppetlabs/puppet/cache/reports
+
+Run puppet apply without any updating (--noop)
+----------------------------------------------
+puppet apply --noop nagios_client.pp
+/usr/local/bin/puppet apply --verbose --debug --noop packages.pp | more
+
+check syntax of a manifest
+--------------------------
+puppet parser validate nagios_client.pp
+
+Debug lines in a manifest
+-------------------------
+notify { "I think my hostname is ${::hostname}": }
+
+Puppet manifest lexical check
+-----------------------------
+puppet-lint is a useful tool that checks your manifest to make sure it conforms to the Puppet Labs official style
+
+yum install gem
+gem install puppet-lint
+puppet-lint <manifest.pp file>
+
+man page equivalent
+-------------------
+puppet describe --list
+puppet describe <type>
+
+Modules & Manifest file location
+--------------------------------
+vi /etc/puppetlabs/code/environments/production/environment.conf
+
+manifest = /etc/puppetlabs/production/manifests
+modulepath = ./modules:$basemodulepath:/etc/puppetlabs/production/modules
+
+puppet config print modulepath
+
+List and install modules
+------------------------
+puppet module list
+puppet module install <module>
+
+Install module
+--------------
+puppet module install puppetlabs-stdlib
+
+Use Puppet to start puppet
+--------------------------
+cd /opt/puppetlabs/puppet/bin
+puppet resource service pe-puppetserver ensure=running
+puppet resource service pe-postgresql ensure=running
+puppet resource service pe-puppetdb ensure=running
+puppet resource service pe-console-services ensure=running
+puppet resource service pe-nginx ensure=running
+puppet resource service pe-activemq ensure=running
+puppet resource service mcollective ensure=running
+puppet resource service puppet ensure=running
+
+puppet dependencies for centos
+------------------------------
+All Nodes Master Nodes Console Nodes Console/Console DB Nodes
+pciutils x      
+system-logos x      
+which x      
+libxml2 x      
+dmidecode x      
+net-tools x      
+virt-what x      
+apr   x x  
+apr-util   x x  
+curl   x x  
+mailcap   x x  
+libjpeg   x   x
+libtool-ltdl   x x  
+unixODBC   x x  
+libxslt       x
+zlib x
+same with redhat
+
+Curl puppet agent from master
+-----------------------------
+curl -k https://itspup01.itsshared.dwp.gov.uk:8140/packages/current/install.bash | sudo bash
+
+
+Puppet and file locations for coping
+------------------------------------
+The Puppet fileserver takes those puppet:/// url and inserts an implicit files directory[ so you don't need to specify that in the url. Very much like a normal old-school webserver takes http://server/~username and looks in /home/username/public_html, a URL like
+
+puppet:///modules/smt_sandbox/000_smt_sandbox 
+
+gets translated on the filesystem into
+
+/etc/puppet/modules/smt_sandbox/files/000_smt_sandbox
+
+so having the extra files path element in your URL is causing the problem.
+
+extending the explanation: source => "puppet:///modules/ssh/sshd_config", means that your sshd_config should be found inside modules/ssh/files/
+
+a class is, it is a named block of Puppet code
+Puppet's Domain Specific Language (DSL)
+No two resources of the same type can share the same title
+
+puppet parser validate rvs.pp
+
+puppet-lint
+gem install puppet-lint
+puppet-lint /etc/puppet/modules
+puppet-lint --fix /etc/puppet/modules
+
+Parse template files
+erb -x -T '-' templates/changedtemplate.erb | ruby -c
+
+facts
+facter memoryfree
+$::ipaddress  # puts factore ipaddress into a variable called ipaddress
+${::ipaddress} # when used in a string
+$target = $::target #assign a custom fact to a module variable
+
+dry run 
+puppet agent --noop --verbose
+
+# to syntax check it we run
+$ puppet --parseonly unixdaemon/manifests/init.pp
+
+Describe 'TYPE' details
+puppet describe user #where user is the type in this example
+
+Resource details
+puppet resource user root #displays all details for user root "resource declaration" 
+
+certs
+puppet cert list
+puppet cert list --all
+puppet cert sign <name>
+puppet cert clean <name>   # removes cert
+puppet node clean <name>   # removes node + cert
+
+modules
+puppet module list
+puppet module install <name>
+puppet module uninstall <name>
+puppet module upgrade <name>
+puppet module search <name>
+puppet module install puppetlabs-apache  #install apache-module from forge
+/etc/puppetlabs/puppet/modules/.
+
+puppet run from master
+puppet kick <name>
+
+Hierra encrypt
+eyaml encrypt -f <filename>
+eyaml encrypt -s <string>
+eyaml encrypt -p      # Encrypt password, will prompt for it
+eyaml decrypt -f <filename>
+eyaml decrypt -s <string>
+eyaml edit -f <filename>    # Decrypts, launches in editor and reencrypts
+
+debug message in manifest
+notify { 'message': loglevel => 'err' }
+
+check for file
+--------------
+if file_exists('somefile.txt') == 1 { }
+
+or 
+
+class ntp::config inherits ntp {
+
+  file { '/etc/ntp.conf':
+    ensure  => file,
+    owner   => 'root',
+    group   => 'root',
+    mode    => 0644,
+    content => template($module_name/ntp.conf.erb),
+  }
+
+}
+
+class directories {
+
+  # create a directory      
+  file { '/etc/site-conf':
+    ensure => 'directory',
+  }
+
+  # a fuller example, including permissions and ownership
+  file { '/var/log/admin-app-log':
+    ensure => 'directory',
+    owner  => 'root',
+    group  => 'wheel',
+    mode   => '0750',
+  }
+
+  # this example is incorrect and creates a file
+  file { '/etc/site-conf/':
+    ensure => 'present',
+  }
+}
+
+execute commands
+-----------------
+exec { "mkdir -p $dir":
+    command => "/bin/mkdir -p $dir",
+    creates => $dir
+}
+
+class basic_exec {
+
+  exec { 'refresh_cache':
+    command => 'refresh_cache 8600',
+    path    => '/usr/local/bin/:/bin/',
+    # path    => [ '/usr/local/bin/', '/bin/' ],  # alternative syntax
+  }
+
+}
+
+conditions
+----------
+if $var == 'value' {
+}
+case $::lsbdistcodename {
+	'squeeze': {
+        }
+        'wheezy', 'jessie': {
+        }
+        default {
+        }
+}
+
+service
+-------
+class ntp::service inherits ntp {
+
+  service { 'ntp':
+    ensure     => running,
+    enable     => true,
+    hasstatus  => true,
+    hasrestart => true,
+    require => Package['ntp'],
+  }
+
+}
+
+class ssh {
+
+  service { 'sshd':
+    ensure  => 'running',
+    enable  => true,
+    require => Package['openssh-server'],
+  }
+
+  # add a notify to the file resource
+  file { '/etc/ssh/sshd_config':
+    notify  => Service['sshd'],  # this sets up the relationship
+    mode    => '0600',
+    owner   => 'root',
+    group   => 'root',
+    require => Package['openssh-server'],
+    content => template('ssh/sshd_config.erb'),
+  }
+
+}
+
+Package 
+--------
+class screen {
+
+  package { 'screen':
+    ensure => 'installed',
+  }
+
+}
+
+class screen {
+
+  package { 'screen':
+    ensure => 'latest',
+  }
+
+}
+
+class apache_server {
+  
+    # determine the apache-server package based on the operatingsystem fact
+    $apache_server = $::operatingsystem ? {
+        Fedora  => 'httpd',
+        default => 'apache2',
+    }
+  
+    package { $apache_server:
+        ensure => 'present',
+        alias  => 'apache_server',
+    }
+  
+    file { '/var/www/html/index.html':
+        source  => 'puppet://modules/index.html',
+        require => Package['apache_server'],
+    }
+  
+}
+
+hosts
+-----
+class host_entries {
+
+  # create a simple hostname and ip host entry
+  host { 'syslog':
+    ip => '10.10.10.10',
+  }
+
+  # create a fully qualified full host entry with an alias
+  host { 'ntpserver.example.com':
+    ip           => '10.100.10.50',
+    host_aliases => 'timeserver',
+  }
+
+  # host entry with multiple aliases
+  host { 'dashboard':
+    ip           => '10.120.100.111',
+    host_aliases => [ 'nagios', 'munin' ],
+  }
+
+}
+
+Custom facts
+------------
+$ find custom_fact/
+custom_fact/
+custom_fact/lib
+custom_fact/lib/facter/             # put custom facts in this directory
+custom_fact/lib/facter/ulimit.rb    # custom fact
+
+# then run puppet to deploy the fact
+$ puppet <your> <client> <options>
+Info: Retrieving plugin
+Notice: /File[/opt/puppetlabs/puppet/cache/lib/facter/ulimit.rb]/ensure: defined content as '{md5}86827131cd2c311606762b8b042019fd'
+
+# and then use facter to check the custom fact is working
+
+$ facter -p ulimit | head
+{
+  max_cpu_time => {
+    soft => "unlimited",
+    hard => "unlimited",
+    unit => "seconds"
+  },
+...snip...
+
+Users
+-----
+class add_user {
+
+  user { 'mcfakey':
+    ensure     => 'present',
+    managehome => true,
+  }
+
+}
+class add_group {
+
+  # minimum required.
+  group { 'logusers':
+    ensure => 'present',
+  }
+
+  # create a group with a specific GID.
+  group { 'stats':
+    gid => 2001,
+  }
+
+}
+
+Puppet config checks
+--------------------
+# show the value of a single setting
+$ puppet --configprint modulepath
+/home/dean/.puppet/modules:/usr/share/puppet/modules
+
+# show all config settings
+$ puppet --configprint all
+
+puppet config files - $confdir/puppet.conf.
+-------------------
+Example agent config
+[main]
+certname = agent01.example.com
+server = puppet
+environment = production
+runinterval = 1h
+
+Example master config
+[main]
+certname = puppetmaster01.example.com
+server = puppet
+environment = production
+runinterval = 1h
+strict_variables = true
+
+[master]
+dns_alt_names = puppetmaster01,puppetmaster01.example.com,puppet,puppet.example.com
+reports = puppetdb
+storeconfigs_backend = puppetdb
+storeconfigs = true
+environment_timeout = unlimited
+
+Puppet example webpage deployment
+---------------------------------
+class lvmguide (
+	$documment_root = '/var/www/html/lvmguide',
+	$port = '80',
+){
+	class { 'apache':
+		default_vhost => false,
+	}
+	apache::vhost { 'learning.puppetlabs.vm':
+		port => $port,
+		docroot => $document_root,
+	}
+	file { '/var/www/html/lvmguide':
+		ensure  => directory,
+		owner   => $::apache::params::user,
+		group   => $::apache::params::group,
+		source  => 'puppet:///modules/lvmguide/html',
+		recurse => true,
+		require => Class['apache'],
+	}
+}
+
+The 'selector' statement
+------------------------
+$rootgroup = $::osfamily ? {
+'Solaris' => 'wheel',
+'Darwin' => 'wheel',
+'FreeBSD' => 'wheel',
+'default' => 'root',
+}
+Here, the value of the $rootgroup is determined based on the control variable
+$osfamily . Following the control variable is a ? (question mark) keyword. In the
+block surrounded by curly braces are series of possible values for the $::osfamily
+fact, followed by the value that the selector should return if the value matches the
+control variable.
+
+file { '/root/architecture.txt' :
+ensure => file,
+content => $::architecture ? {
+'i386' => "This machine has a 32-bit architecture.\n",
+'x86_64' => "This machine has a 64-bit architecture.\n",
+}
+}
+
+
+check agent is running
+----------------------
+puppet resource service puppet ensure=running enable=true
+
+certs
+-----
+puppet agent --test (request cert for agent)
+puppet agent --test --server <puppet master server>
+puppet cert clean <server> (do the puppet master)
+rm -f /home/its/.puppet/ssl/cert (do this on the client
+puppet agent --test (register for the first time)
+puppet cert list -all
+puppet agent --configprint server
+puppet cert --sign
+puppet config print certname
+puppet node purge itsjenk01.dwp.gov.uk
+
+service stop
+------------
+systemctl stop pe-puppetdb.service
+systemctl stop pe-puppet-dashboard-workers.service
+systemctl stop pe-puppet.service
+systemctl stop pe-puppetserver.service
+
+systemctl restart puppet
+
+Remove puppet enterprise
+------------------------
+/opt/puppet/bin/puppet-enterprise-uninstaller -p -d
+
+Log files
+---------
+/var/log/pe-puppetserver/puppetserver.log
+
+File layouts
+------------
+You could put all your Puppet manifests in a single file, and it would make no difference to Puppet. But it's much better and easier to manage if you break them up into several files. Conventionally, the top-level "master" file that includes everything else is named site.pp.You should put your node declarations in a file named nodes.pp.
+
+System details of host
+----------------------
+facter
+
+Including Ruby code
+-------------------
+<%=  %>
+Anything between these is ruby
+
+Accessing Facts
+---------------
+Local variable
+class system {
+	$operatingsystem = 'MyOS'
+	notify { "This operating system is: ${operatingsystem}": }
+}
+
+Top scope variable from fact
+class truesystem {
+	$operatingsystem = 'MyOS'
+	notify { "This true operating system is: ${::operatingsystem}": }
+}
+
+Path to itspup01 manifests
+--------------------------
+/etc/puppetlabs/production
+
+Create a basic module structue
+------------------------------
+puppet module generate <USERNAME>-<MODULENAME>
+
+Puppet report config and location
+---------------------------------
+puppet config print report
+true
+
+puppet config print reportdir
+/opt/puppetlabs/puppet/cache/reports
+
+Run puppet apply without any updating (--noop)
+----------------------------------------------
+puppet apply --noop nagios_client.pp
+/usr/local/bin/puppet apply --verbose --debug --noop packages.pp | more
+
+check syntax of a manifest
+--------------------------
+puppet parser validate nagios_client.pp
+
+Debug lines in a manifest
+-------------------------
+notify { "I think my hostname is ${::hostname}": }
+
+Puppet manifest lexical check
+-----------------------------
+puppet-lint is a useful tool that checks your manifest to make sure it conforms to the Puppet Labs official style
+
+yum install gem
+gem install puppet-lint
+puppet-lint <manifest.pp file>
+
+man page equivalent
+-------------------
+puppet describe --list
+puppet describe <type>
+
+Modules & Manifest file location
+--------------------------------
+vi /etc/puppetlabs/code/environments/production/environment.conf
+
+manifest = /etc/puppetlabs/production/manifests
+modulepath = ./modules:$basemodulepath:/etc/puppetlabs/production/modules
+
+puppet config print modulepath
+
+List and install modules
+------------------------
+puppet module list
+puppet module install <module>
+
+Install module
+--------------
+puppet module install puppetlabs-stdlib
+
+Use Puppet to start puppet
+--------------------------
+cd /opt/puppetlabs/puppet/bin
+puppet resource service pe-puppetserver ensure=running
+puppet resource service pe-postgresql ensure=running
+puppet resource service pe-puppetdb ensure=running
+puppet resource service pe-console-services ensure=running
+puppet resource service pe-nginx ensure=running
+puppet resource service pe-activemq ensure=running
+puppet resource service mcollective ensure=running
+puppet resource service puppet ensure=running
+
+puppet dependencies for centos
+------------------------------
+All Nodes Master Nodes Console Nodes Console/Console DB Nodes
+pciutils x      
+system-logos x      
+which x      
+libxml2 x      
+dmidecode x      
+net-tools x      
+virt-what x      
+apr   x x  
+apr-util   x x  
+curl   x x  
+mailcap   x x  
+libjpeg   x   x
+libtool-ltdl   x x  
+unixODBC   x x  
+libxslt       x
+zlib x
+same with redhat
+
+Curl puppet agent from master
+-----------------------------
+curl -k https://itspup01.itsshared.dwp.gov.uk:8140/packages/current/install.bash | sudo bash
+
+
+Puppet and file locations for coping
+------------------------------------
+The Puppet fileserver takes those puppet:/// url and inserts an implicit files directory[ so you don't need to specify that in the url. Very much like a normal old-school webserver takes http://server/~username and looks in /home/username/public_html, a URL like
+
+puppet:///modules/smt_sandbox/000_smt_sandbox 
+
+gets translated on the filesystem into
+
+/etc/puppet/modules/smt_sandbox/files/000_smt_sandbox
+
+so having the extra files path element in your URL is causing the problem.
+
+extending the explanation: source => "puppet:///modules/ssh/sshd_config", means that your sshd_config should be found inside modules/ssh/files/
+
+List all certs on puppet server
+-------------------------------
+puppet cert list --all | grep EAY11LEAS01
+puppet cert sign eay03ldoc01.npd.learndirect.com
+
+debug message in a manifest
+---------------------------
+notify {"environment2 = ${environment2} ":}
+
+Stop & start puppet
+-------------------
+puppet resource service puppet ensure=stopped
+puppet resource service puppet ensure=running enabled=true
+
+Install a package
+-----------------
+
+class profiles::docker {
+  
+    package { 'docker':
+        ensure => 'installed',
+    }
+}
+
+Start a service
+---------------
+  service { 'docker':
+        ensure => running,
+        enable => true,
+        require => Package['docker'],
+    }
+
+Hiera data paths 
+----------------
+/etc/puppet/hiera.yaml
+
+
+Check file exists
+-----------------
+file { '/etc/sudoers.d/techops':
+    ensure => absent,
+    }
+    
+Entry in file
+-------------
+file { '/etc/sudoers.d/VCA':
+    ensure  => 'file',
+    content => "%VCA_Admin        ALL=(ALL)       ALL\n%lg-linux-server-administrators-vca        ALL=(ALL)       ALL\n",
+    group   => '0',
+    mode    => '644',
+    owner   => '0',
+  }
+  
+Remove line from file
+---------------------
+file_line { 'ops line removal':
+	    ensure => absent,
+	    line => 'ops    ALL=(ALL)       ALL',
+	    path => '/etc/sudoers.d/VCA',
+    }
+
+
+Create file from template
+-------------------------
+  file { '/ldirect/dropwizard/pay/pay_java_config':
+    ensure  => 'file',
+    content =>  template('pay/java_config.erb'),
+    group   => 'dwizard',
+    mode    => '644',
+    owner   => 'dwizard',
+    notify  => Service['pay'],
+  }
+}
+
+Install 'pay' package
+---------------------
+  package { 'pay':
+    ensure => $version,
+    notify => Service['pay'],
+    install_options => [ '--enablerepo=ldsoftware*' ],
+  }
+
+Start 'pay' service
+-------------------
+  service { 'pay':
+    ensure  => running,
+    enable  => true,
+    require => Package['pay'],
+  }
+
+Conditional statement within manifest
+-------------------------------------
+note - facts fqdn equals regular expression ! not)
+
+class roles::bpaw_node {
+  
+  include profiles::linux_base_ss_prod
+  include profiles::admin_web_app
+  include profiles::apache_web
+  
+  if ($environment == 'production' or $environment == 'SSPERF' and !($fqdn =~ /EAT01.*/)) {
+
+  notify {"installing tracelyzer" :}
+    
+    include tracelytics::apache
+    include tracelytics::java
+  }
+  else {
+  
+    notify {"not installing tracelyzer" :}
+  }
+}
+
+
+
+Install Squid
+-------------
+
+class squid (
+  $enable_cache=false,
+  $dns_servers='',
+  ) {
+  package { 'squid':
+    ensure => installed,
+    before => File['/etc/squid/squid.conf']
+  }
+
+  file { '/etc/squid/squid.conf':
+    ensure  => 'file',
+    content => template('squid/squid.conf.erb'),
+    group   => '0',
+    mode    => '644',
+    owner   => '0',
+    notify  => Service['squid']
+  }
+
+  service { 'squid':
+    ensure => 'running',
+    enable => true,
+  }
+}
+
+
+squid.conf.erb file
+#
+# Recommended minimum configuration:
+#
+acl manager proto cache_object
+acl localhost src 127.0.0.1/32 ::1
+acl to_localhost dst 127.0.0.0/8 0.0.0.0/32 ::1
+
+# Example rule allowing access from your local networks.
+# Adapt to list your (internal) IP networks from where browsing
+# should be allowed
+acl localnet src 10.208.0.0/16 10.209.0.0/16 10.18.0.0/16   # RFC1918 possible internal network
+#acl localnet src 172.16.0.0/12 # RFC1918 possible internal network
+#acl localnet src 192.168.0.0/16        # RFC1918 possible internal network
+acl localnet src fc00::/7       # RFC 4193 local private network range
+acl localnet src fe80::/10      # RFC 4291 link-local (directly plugged) machines
+
+acl SSL_ports port 443
+acl Safe_ports port 80          # http
+acl Safe_ports port 21          # ftp
+acl Safe_ports port 443         # https
+acl Safe_ports port 70          # gopher
+acl Safe_ports port 210         # wais
+acl Safe_ports port 1025-65535  # unregistered ports
+acl Safe_ports port 280         # http-mgmt
+acl Safe_ports port 488         # gss-http
+acl Safe_ports port 591         # filemaker
+acl Safe_ports port 777         # multiling http
+acl CONNECT method CONNECT
+
+#
+# Recommended minimum Access Permission configuration:
+#
+# Only allow cachemgr access from localhost
+http_access allow manager localhost
+http_access deny manager
+
+# Deny requests to certain unsafe ports
+http_access deny !Safe_ports
+
+# Deny CONNECT to other than secure SSL ports
+http_access deny CONNECT !SSL_ports
+
+# We strongly recommend the following be uncommented to protect innocent
+# web applications running on the proxy server who think the only
+# one who can access services on "localhost" is a local user
+#http_access deny to_localhost
+
+#
+# INSERT YOUR OWN RULE(S) HERE TO ALLOW ACCESS FROM YOUR CLIENTS
+#
+
+# Example rule allowing access from your local networks.
+# Adapt localnet in the ACL section to list your (internal) IP networks
+# from where browsing should be allowed
+http_access allow localnet
+http_access allow localhost
+<%if @enable_cache == 'true'%>
+cache deny localnet
+<%end-%>
+
+# And finally deny all other access to this proxy
+http_access deny all
+
+# Squid normally listens to port 3128
+http_port 3128
+
+# We recommend you to use at least the following line.
+hierarchy_stoplist cgi-bin ?
+
+# Uncomment and adjust the following to add a disk cache directory.
+#cache_dir ufs /var/spool/squid 100 16 256
+
+# Leave coredumps in the first cache dir
+coredump_dir /var/spool/squid
+
+# Add any of your own refresh_pattern entries above these.
+refresh_pattern ^ftp:           1440    20%     10080
+refresh_pattern ^gopher:        1440    0%      1440
+refresh_pattern -i (/cgi-bin/|\?) 0     0%      0
+refresh_pattern .               0       20%     4320
+
+<%if @dns_servers != ''%>
+dns_nameservers <%=@dns_servers%>
+<%end%>
+
+Get IP address of an interface from facter
+------------------------------------------
+class dns ($interface) {
+    $address = inline_template("<%= scope.lookupvar('::ipaddress_${interface}') -%>")
+
+    $message = "So you want to know the IP address for ${interface} huh?"
+    $message += "Well, it's ${address}"
+    notify {  "${message}": }
+}
+
+class { 'dns': interface => 'eth0' }
