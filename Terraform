@@ -1,0 +1,39 @@
+provider "vsphere" {
+	user	= "HBEU\\44013280"
+	password = ""
+	vsphere_server = "gbirir"
+	allow_unverified_ssl = true
+	client_debug = true
+}
+
+resource "vsphere_virual_machine" "web" {
+	name = "hashi-mark"
+	folder = "Testing"
+	vcpu  = 2
+	memory = 4096
+	datacenter = "wwd4"
+	cluster = "ggde"
+	dns_suffix = ["sys.ff.ff"]
+
+	network_interface {
+		label = "infrastructure 2249"
+		ipv4_address = "128.160.198.192"
+		ipv4_prefix_length = "24"
+		ipv4_gateway = "128.102.4.2"
+	}
+
+	disk {
+		template = "template_fileneame"
+		datestore = "NFS/some volume"
+	}
+}
+
+Terraform to build a vsphere VM
+
+./terraform plan auto_test/	= validate the config file
+./terraform apply auto_test/	= run the config file
+./terraform destroy auto_test/	= remove the host defined in the config file
+
+inspec
+-------
+inspec exec <test>
