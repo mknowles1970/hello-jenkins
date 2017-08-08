@@ -1,0 +1,239 @@
+gunzip -dv	 	- uncompress .gz file
+
+bp 		 	- netback user menu
+bpadm		  	- NetBackup menu interface for administrators
+netbackup stop		- Stops Netbackup
+netbackup start		- Start Netbackup
+tpautoconf -a
+tpconfig -dl		- list tape drive status
+/opt/openv/volmgr/bin/vmoprcmd -up 3 
+vmoprcmd -d
+ethtool eth0 - display NIC details
+sar -n DEV -o InterfaceStats 10800 1 & - write to file
+sar -n DEV -f InterfaceStats - read from file network stats
+cat /etc/sysctl.conf - kernel parameters
+tcpdump -i eth1 ether host 01:00:0c:cc:cc:cc -s 1500 -vv -nn
+shutdown -g0 -y -h - shutdown and turn off
+
+NTP service
+chkconfig ntpd on	- Turn a service on 
+service ntpd stop
+ntpdate -u 192.168.1.100
+service ntpd start
+ntpq -p			- check if it's sync'd - jitter should be less than zero delay and offset non-zero
+
+route add default gw <IP> <interface>
+
+To UP the tape drives on Netbackup Linux when there status reports DOWN
+
+Log into lonlisnbu01 as root
+cd /usr/openv/volmgr/bin
+tpconfig –l		provides drive status (take note of the drive index)
+vmoprcmd –up <drive index number>
+
+pconfig		- tape device setup
+
+cat /proc/version 	- Which Linux distro and version
+cat /proc/scsi/scsi 	- SCSI Attached devices
+dmesg | grep scsi	- SCSI boot up messages
+lsmod | grep scsi	- SCSI module is loaded
+shutdown -r now
+
+Change IP on an interface
+vi /etc/sysconfig/network-scripts/ifcfg-eth0
+vi /etc/sysconfig/network
+
+And restart the interfaces...
+
+/etc/init.d/network restart
+
+manually change the timezone, you can edit the /etc/sysconfig/clock file
+
+Change DNS servers
+vi /etc/resolv.conf
+
+To mount a .iso using mount
+Create a mount point (for example, /mnt/here):
+mkdir /mnt/here
+Mount the image to the mount point:
+mount -o loop -t iso9660 iso_name.iso /mnt/here
+
+mount and NFS share
+mount -o tcp lonfiler01:/t_fsd/FSD_Test/TRDA /opt/fsd
+
+Loading the Driver
+Step 1: Make sure no previous driver version is currently loaded
+        Run:
+        #> modprobe -r mlx4_en
+
+Step 2: Load the new driver version
+        Run:
+        #> modprobe mlx4_en
+
+To assign an IP address to the interface run:
+  #> ifconfig eth<x> <ip>
+
+   where 'x' is the OS assigned interface number.
+
+To check driver and device information run:
+  #> ethtool -i eth<x>
+
+/etc/sysctl.conf - kernal parameters
+sysctl -p - refresh config
+
+service irqbalance stop
+chkconfig irqbalance off – stops server from running at boot time
+
+install dos2unix
+yum install dos2unix </SPAN> 
+
+Create a bond0 configuration file
+Red Hat Linux stores network configuration in /etc/sysconfig/network-scripts/ directory. First, you need to create bond0 config file:
+# vi /etc/sysconfig/network-scripts/ifcfg-bond0Append following lines to it:DEVICE=bond0
+IPADDR=192.168.1.20
+NETWORK=192.168.1.0
+NETMASK=255.255.255.0
+USERCTL=no
+BOOTPROTO=none
+ONBOOT=yes
+
+ARP
+---
+ip neighbor add 192.168.101.1 lladdr 02:a0:98:0a:e5:a9 dev bond1 nud permanent
+ip neighbor show dev bond1
+arping -I bond0 192.168.101.2
+ip route list 192.168.101.2/24 table cache
+ip route get 192.168.100.1
+ip neigh show 192.168.101.2
+ip addr ls bond0
+
+SOSReport
+---------
+sosreport
+
+ESX
+---
+vifp addserver lonvisprd05.global.thenational.com --username root
+vifptarget -s lonvisprd05
+esxcfg-nics -l
+esxcfg-vswitch -l |grep -A 10 vSwitch2
+esxcfg-vswitch -m 9000 vSwitch2
+vifptarget -c
+esxcfg-swscsi – Configures software iSCSIadapters
+
+
+RPM
+---
+rpm -ivh xsnow-1.40-5.i386.rpm - install a rpm package
+rpm -qa | grep jre |more - list installed packages
+rpm -e jre-1.6.0_29-fcs - remove package
+
+
+SSH - iLo
+---------
+putty to the iLo address
+login as a iLo user
+takes you into VSP
+From VSP type in CAPS TEXTCONS this gives you the console
+
+
+MELLANOX
+--------
+tar xzvf mlnx_en-1.5.6.gz
+cd mlnx_en-1.5.6
+./install.sh
+modprobe -r mlx4_en
+modprobe mlx4_en
+ethtool -i eth4
+
+lspci - list pci devices
+mstflint -d 08:00.0 q - queries the cards
+
+( fw-ConnectX2-2_9_1000-516937-B21_C1-Flexboot-3.3.200.bin is in /tmp directory for this example). 
+
+
+mstflint -d 08:00.0 -i /tmp/fw-ConnectX2-2_9_1000-516937-B21_C1-Flexboot-3.3.200.bin -nofs burn
+
+Current FW version on flash:   2.8.0000
+
+New FW version:                2.9.1000
+
+Burn process will not be failsafe. No checks will be performed.
+
+ALL flash, including the Invariant Sector will be overwritten.
+
+If this process fails, computer may remain in an inoperable state.
+
+Do you want to continue ? (y/n) [n] : y
+
+Burning first   FW image without signatures   - OK
+
+Restoring first   signature                   - OK
+
+reboot
+
+
+Run “lspci | grep Mellanox” to determine the PCI bus ID 
+Unzip the firmware image by running “unzip <firmware file name>.zip” 
+You need the mstflint utility to update the firmware. You can download mstflint from the OpenFabrics site at mstflint_SW for Linux. (NOTE: If OFED is installed on your machine, then mstflint is already installed.) 
+In the same directory as the firmware file, run “mstflint –d <PCI bus ID, i.e. 05:00.0> -i <.bin file> b”. For details on mstflint usage, see mstflint FW Burning Tool README 
+Reboot the system 
+Run 'ibstat' to verify the new firmware version 
+
+http://www.xenocafe.com/tutorials/openssh_linux/redhat/openssh_linux_redhat.php
+ssh http://rpm.pbone.net/index.php3/stat/4/idpl/2411413/dir/redhat_9/com/openssh-3.5p1-11.i386.rpm.html
+ssh http://rpm.pbone.net/index.php3/stat/4/idpl/2411416/dir/redhat_9/com/openssh-clients-3.5p1-11.i386.rpm.html
+ssh http://rpm.pbone.net/index.php3/stat/4/idpl/2411417/dir/redhat_9/com/openssh-server-3.5p1-11.i386.rpm.html
+
+http://forums.fedoraforum.org/showthread.php?t=192590
+
+route add -net 41.228.126.128 netmask 255.255.255.128 gw 10.117.10.173
+ifconfig eth4.903 up
+
+[root@lonlisftp02 ~] # cat /etc/sysconfig/i18n
+LANG="en_US.UTF-8"
+
+tcpdump capture to file
+tcpdump -v -w trda.pcap -s 200 -i eth3 dst 147.62.236.1
+tcpdump -v -w trda.pcap -s 200 -i eth3 host 147.62.236.1
+tcpdump -v -w trda.pcap -s 200 -i eth3 dst 147.62.236.1 or src 147.62.236.1
+-s chops the length of the packet might not want this (-C size of file)
+
+
+Static Routes in RedHat  
+-----------------------     
+
+There are several different ways to setup static routing in RedHat Linux systems.  Below are three different ways to setup persistent static routes.
+
+1)Edit the file /etc/sysconfig/network-scripts/route-<eth#> and add the following lines
+    
+    GATEWAY0=<gateway address>
+    NETMASK0=<network netmask>
+    ADDRESS0=<network address>
+    GATEWAY1=<gateway address>
+    NETMASK1=<network netmask>
+    ADDRESS1=<network address>
+
+    Example would be, file /etc/sysconfig/network-scripts/route-eth0
+    GATEWAY0=192.168.0.1
+    NETMASK0=255.240.0.0
+    ADDRESS0=172.16.0.0
+    GATEWAY1=192.168.0.1
+    NETMASK1=255.0.0.0
+    ADDRESS1=10.0.0.0
+
+2)Edit the file /etc/sysconfig/network-scripts/route-<eth#>
+    
+    <ADDRESS>/<MASK BITS> via <GATEWAY> dev <eth#>
+
+    Example would be, file /etc/sysconfig/network-scrips/route-eth0
+    172.16.0.0/12 via 192.168.0.1 dev eth0
+    10.0.0.0/8 via 192.168.0.1 dev eth0
+
+3)Static Routes file.  Edit the file /etc/sysconfig/static-routes
+
+    any net <NETWORK> netmask <NETMASK> gw <GATEWAY> <DEV>
+
+    Example would be, file /etc/sysconfig/static-routes
+    any net 172.16.0.0 netmask 255.240.0.0 gw 192.168.0.1 eth0
+    any net 10.0.0.0 netmask 255.0.0.0 gw 192.168.0.1 eth0
