@@ -1,0 +1,192 @@
+Three States of GIT 
+Working directory
+Staging area - pre-commit holding area
+Commit - Git Repository (history)
+origin refers to the github copy of our repository
+
+Git Workflow
+------------
+git clone <your fork url> name
+cd name
+git remote -v
+git remote add upstream <original repo url>
+git remote add somefork <another fork of repo url>
+# move to your fork
+git checkout origin/master
+# merge original repo
+git fetch upstream/master
+git merge upstream/master
+# merge other user fork 
+git fetch somefork/master
+git merge somefork/master
+
+Hooks
+-----
+Git - repo settings - hooks & service
+Git pull request builder - Jenkins plugin
+
+Initial local setup
+-------------------
+git config --global user.name "Mark"
+git config --global user.email "mark@somewhere"
+git config --global --list
+
+search for string cidr in git logs
+----------------------------------
+git log -200 -Scidr --pretty=format:"%ad %h %an : %s"
+
+show details of a commit
+------------------------
+git show <commit id>
+
+Update the metafiles and versions first - merge - then create a release last 
+----------------------------------------------------------------------------
+
+Creating Personal Access Token (PAT) 
+------------------------------------
+Set git to use the credential memory cache
+git config --global credential.helper cache
+
+Set the cache to timeout after 1 hour (setting is in seconds)
+git config --global credential.helper 'cache --timeout=3600'
+
+There is also an option to store then permanently by using the following, instead of the above. 
+git config --global credential.helper store
+
+Setup Upstream master
+---------------------
+git remote add upstream git@github.com/MSMFG/role-configs.git
+git remote -v
+
+create a local repo in the current location
+-------------------------------------------
+git init
+
+This will bring down a project to a local repository - it will also create the repo
+-----------------------------------------------------------------------------------
+git clone http://10.1.2.11/dmurray/puppetmanifests.git <path name>
+
+Add the URL for the remote repository where your local repository will be pushed.
+---------------------------------------------------------------------------------
+git remote add origin http://10.1.2.11/dmurray/puppetmanifests.git
+
+List remote repository location
+-------------------------------
+[root@itspupp01 production]# git remote -v
+origin  http://10.1.2.11/dmurray/puppetmanifests.git (fetch)
+origin  http://10.1.2.11/dmurray/puppetmanifests.git (push)
+
+Git fetch & git pull
+--------------------
+git fetch is the command that says "bring my local copy of the remote repository up to date." 
+git pull says "bring the changes in the remote repository where I keep my own code.
+
+Normally "git pull" does this by doing a "git fetch" to bring the local copy of the remote repository up to date, and then merging the changes into your own code repository and possibly your working copy.
+
+#git pull origin master
+
+Create a new branch
+-------------------
+git checkout -b <new branch>
+
+To delete a local branch
+------------------------
+git branch -d the_local_branch
+
+To remove a remote branch
+-------------------------
+git push origin :the_remote_branch
+
+Add the whole directory tree from local to project repo
+-------------------------------------------------------
+git add <directory>
+git add .   adds all files recursively to staging 
+
+Commit changes to staging in project repo
+-------------------------------------------
+git commit -m "Updated NRPE puppet script"
+
+Push changes fro staging area to main project repo
+--------------------------------------------------
+git push -u origin master
+
+Setup an ignore list for files you don't want to unload
+-------------------------------------------------------
+create a .gitignore file with a list of exclusion files
+
+.git/config file
+----------------
+
+[user]
+    name = Mark
+    email = mark@mail
+[core]
+        repositoryformatversion = 0
+        filemode = true
+        bare = false
+        logallrefupdates = true
+    compression = 9
+    sparseCheckout = true
+[color]
+    ui = auto
+    branch = auto
+    interactive = always
+    status = auto
+[remote "origin"]
+        url = git@github.com:mark/role-configs.git
+        fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "master"]
+        remote = origin
+        merge = refs/heads/master
+[credential]
+    helper = store --file=~/.git-credentials
+[credential "https://github.com"]
+    username = mark
+[alias]
+    co = checkout
+    ci = commit
+    rb = rebase
+    s = status
+    b = branch
+    update = !"git fetch origin -v; git fetch upstream -v; git merge upstream/master"
+    l = log --pretty=format:'%h : %an, %ar : %s' --graph
+    cam = commit -am
+
+[remote "upstream"]
+        url = git@github.com:mark/role-configs.git
+        fetch = +refs/heads/*:refs/remotes/upstream/*
+
+
+------------------
+
+git remote show origin
+git diff script_conversion secrets_handling  = compare two different branches
+git push origin --delete <branch> = Delete a remote branch <branch>
+
+1 create a branch or a fork
+2 do changes you need
+3 squash commits into one
+4 pull from main repo to get any changes
+5 open a pull request
+
+cheery-picking
+
+1 work on branch
+2 git commit -am "my message"
+3 git push origin engineering
+4 git log
+5 git checkout test
+6 git cherry-pick hash-id (from the git log output your change)
+7 git push origin test
+
+-------------
+
+SSH Key Gen
+ssh-keygen -t rsa -b 4096 -C "mark@mail"
+eval $(ssh-agent -s)
+ssh-add ~/.ssh/id_rsa
+ssh-add -l
+ssh -T git@alm-github.systems.uk.hsbc
+
+
+ 
