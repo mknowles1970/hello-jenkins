@@ -1,0 +1,121 @@
+Pods
+----
+are small groups of Docker containers, able to be maintained within Kubernetes. Pods are easily deployable, resulting in less downtime when testing a build or QA debugging.
+
+Labels
+------
+ are exactly as they sound, used to organize groups of objects determined by their key:value pairs.
+
+Services
+--------
+ are used for load balancing, providing a centralized name and address for a set of pods.
+
+Clusters
+--------
+ on Kubernetes eliminates the need for developers to worry about physical machines, acting as lightweight VMs in their own right, each capable of handling tasks which require scalability.
+
+etcd - A key-value store for shared configuration and service discovery.
+flannel - An etcd backed network fabric for containers.
+kube-apiserver - Provides the API for Kubernetes orchestration.
+kube-controller-manager - Enforces Kubernetes services.
+kube-scheduler - Schedules containers on hosts.
+kubelet - container manifest so the containers are launched according to how they are described.
+kube-proxy - Provides network proxy services.
+
+Install kubernetes Master on centos
+-----------------------------------
+yum -y install etcd kubernetes
+Configure etcd to listen to all IP addresses inside /etc/etcd/etcd.conf
+	ETCD_NAME=default
+	ETCD_DATA_DIR="/var/lib/etcd/default.etcd"
+	ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379"
+	ETCD_ADVERTISE_CLIENT_URLS="http://localhost:2379"
+
+Configure KubernetKUBE_API_ADDRESS="--address=0.0.0.0"
+	KUBE_API_PORT="--port=8080"
+	KUBELET_PORT="--kubelet_port=10250"
+	KUBE_ETCD_SERVERS="--etcd_servers=http://127.0.0.1:2379"
+	KUBE_SERVICE_ADDRESSES="--service-cluster-ip-range=10.254.0.0/16"
+	KUBE_ADMISSION_CONTROL="--admission_control=NamespaceLifecycle,NamespaceExists,LimitRanger,SecurityContextDeny,ResourceQuota"
+KUBE_API_ARGS=""es API server inside /etc/kubernetes/apiserver
+
+Start and enable etcd, kube-apiserver, kube-controller-manager and kube-scheduler
+	for SERVICES in etcd kube-apiserver kube-controller-manager kube-scheduler; do
+	    systemctl restart $SERVICES
+	    systemctl enable $SERVICES
+	    systemctl status $SERVICES 
+	done	
+
+Install kubernetes Minion (node) on centos
+------------------------------------------
+Install flannel and Kubernetes 
+yum -y install flannel kubernetes
+
+Configure etcd server for flannel service. /etc/sysconfig/flanneld to connect to the respective master
+	FLANNEL_ETCD="http://192.168.50.130:2379"
+
+Configure Kubernetes default config at /etc/kubernetes/config, ensure you update the KUBE_MASTER 
+	KUBE_MASTER="--master=http://192.168.50.130:8080"
+
+Configure kubelet service inside /etc/kubernetes/kubelet
+	KUBELET_ADDRESS="--address=0.0.0.0"
+	KUBELET_PORT="--port=10250"
+	# change the hostname to this host’s IP address
+	KUBELET_HOSTNAME="--hostname_override=192.168.50.131"
+	KUBELET_API_SERVER="--api_servers=http://192.168.50.130:8080"
+	KUBELET_ARGS=""
+Start services
+for SERVICES in kube-proxy kubelet docker flanneld; do
+    systemctl restart $SERVICES
+    systemctl enable $SERVICES
+    systemctl status $SERVICES 
+done
+
+---------------------------------------------
+Define flannel network configuration for etcd
+etcdctl mk /atomic.io/network/config '{"Network":"172.17.0.0/16"}'
+
+kubectl get nodes - node status
+kubectl create -f mysql.yaml - create a pod from yaml file
+kubectl get pods - list pods
+
+
+twelve-factor methodology
+-------------------------
+I. Codebase
+One codebase tracked in revision control, many deploys
+II. Dependencies
+Explicitly declare and isolate dependencies
+III. Config
+Store config in the environment
+IV. Backing services
+Treat backing services as attached resources
+V. Build, release, run
+Strictly separate build and run stages
+VI. Processes
+Execute the app as one or more stateless processes
+VII. Port binding
+Export services via port binding
+VIII. Concurrency
+Scale out via the process model
+IX. Disposability
+Maximize robustness with fast startup and graceful shutdown
+X. Dev/prod parity
+Keep development, staging, and production as similar as possible
+XI. Logs
+Treat logs as event streams
+XII. Admin processes
+Run admin/management tasks as one-off processes
+
+kubernetes vs mesos
+Those working with the Google Cloud Engine may prefer working with Kubernetes, while people accustomed to Microsoft Azure may enjoy the Mesosphere workflow pipeline
+
+Kubernetes allows for quick-scaling, lightweight cluster management, while Mesos requires more resources. Mesos may be a better decision for larger teams with more demanding projects that are already running at scale in production. 
+
+Docker only allows containers to exchange information with one another when they are located on the same host machine.
+
+cluster is a flexible resource just like a VM. It is a logical computing unit. Turn it up, use it, resize it, turn it down quickly and easily.
+
+Mesos gives you an escape valve if you need capabilities that are not yet implemented by the community in the Kubernetes framework.
+
+Marathon runs on top of Mesos - Marathon is a cluster-wide init and control system for running Linux services
