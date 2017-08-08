@@ -1,0 +1,180 @@
+class vcsinstall::params
+{
+	case $::osfamily {
+		'Redhat' : {
+			$package_name = 'ENTERPRISE71'
+			$package_provider = 'yum'
+     			$
+		}
+		default: {
+			fail("${::operatingsystem} not supported")
+		}
+	}
+
+	$org = undef
+}
+
+--------------------
+
+class vcsinstall::install (
+	$package_ensure = $vcsinstall::package_ensure,
+) {
+
+	notice("Add additional")
+	exec { 'cluster_satellit_' :
+		command => "sub",
+		unless => "/usr/bin/yum",
+		timeout => 600,
+		require => Exec[cluster],	
+		path => '/usr/bin',
+	}
+
+	package { $package_vrts:
+		ensure => $package,
+		provider => $package_provider,
+		require => Exec[some],
+	}
+
+	service{'vxdbdctrl':
+		ensure => stopped,
+		enable => false,
+		require => Package[$package],
+	}
+
+-----------------------
+
+class vcsinstall (
+	package_name	= $vcsinstall::params::package_name,
+
+	org		= hiera('profile::vcsinstall::base_config::satellite_registration::org'),
+
+) inherits vcsinstall::params {
+
+	if ($::osfamily == 'Redhat') and ($::operatingsystemmajrelease == '7') {
+		$index = 'rhel7'
+	} else {
+		$index = 'rhel6'
+	}
+	
+	case $trusted['extensions']['pp_environment'] {
+		/^eng.*/: {
+			$key = 'engineering'
+		}
+		/^test.*/: {
+			$key = 'test'
+		}
+		default: {
+			$key = 'production'
+		}
+	}
+
+	notice("starting")
+
+	validate_string($package)
+
+	$_exists = inline_template("<%= File.exists?('/etc/VRTSvcs/main.cf') %>")
+
+	case $_exists {
+		"true": {
+	            notice("The VCS")
+		}
+		"false": {
+		    class {'::vscinstall':
+			activation_key => $activation_key[$index][$key],
+			org	=> $org,
+	            } ->
+	         class { '::vcsinstall::config': } ->
+	         Class['::vcsinstall']
+	}
+  }
+}
+
+----------------
+
+class vcsinstall::config(
+	$license_key = $vcsinstall::license_key,
+) {
+
+	$nic1_ip = inline_template("<%= scope.lookupvar('::ipaddress_${hb1}') -%>")
+	$nic1_mac = inline_template("<%= scope.lookupvar('::macaddress_${hb1}') -%>")
+
+	file {"/etc/vx":
+		ensure => 'directory',
+		mode => '0750',
+		owner => 'root',
+		group => 'root',
+		require => Exec[info],
+	}
+
+	file {"/etc/vx/dmppolicy":
+		ensure => present,
+		mode => '0750',
+		owner => 'root',
+		group => 'root',
+		content => epp('vcsinstall/dmppolicy.info.epp'),
+		require => File["/etc/vx"],
+	}
+
+	file {"/etc/sysconfig/ifcfg-${hb1}":
+		ensure => present,
+		mode => '0750',
+		owner => 'root',
+		group => 'root',
+		content => epp('vcsinstall/nic.epp', {
+			'ip'	=> "${nic1_ip}",
+			'device' => "${hb1}",
+			'mac' => "${nic1_mac}",
+		}),
+		require => File["/etc/vx"],
+	}
+
+	file { "/etc/vx/install-db':
+		ensure => absent,
+		require => File["some"],
+	}
+}
+
+-----------
+
+llthosts.epp
+0 <%= $serverpri %>
+1 <%= $serversec %>
+
+-------------------
+
+/opt/puppetlabs/bin/puppet apply --hiera_config=/var/dc-masterless-puppet/hiera.yaml --modulepath=/var/dc-masterless-puppet/modules -e "include profile::base::base_linux::base_config::rsyslog"
+
+------------------
+
+notify { "Debug line ${rate_limit}": }
+
+-------------------
+
+subscription-manager register --org="SBC" --activationkey="fkfkf-f-f-f-£
+subscription-manager attach --auto
+
+-----------------------
+
+useradd -m -d /home/engineer -s /bin/bash -U engineer -p engineer
+
+-------------------
+
+puppet agent -t --no-use_cached_catalog
+
+----------------------
+
+puppet_code_deploy
+
+output=$(curl -s -k -X POST -H 'Content-Type: application/json' -d '{"login":"'$username'","password": "'$password'", "lifetime": "10m"}'
+https://gb4434.com:4433/rbac-api/v1/auth/token)
+
+if [[ ${output} != *"token"* ]]; then
+	echo $output
+	exit 1
+fi
+
+TOKEN=$(echo $output | sed 's/{"token":"//;s/"}//')
+
+echo "Calling code manager"
+
+curl -s -k -X POST -H 'Content-Type: application/json' -H "X-Authentication:${TOKEN}" https://gjrjr.com:8170/code-manager/v1/deploys -d '{"environments": ["'$environment'"], "wait": true}'
