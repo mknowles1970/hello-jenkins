@@ -1,0 +1,219 @@
+packer build <template> - builds artifacts from <template>.JSON file
+packer inspect <template> - displays details contained within the <template>
+packer validate <template> - validates the syntax and configuration of a template
+"c:\program files\oracle\virtualbox\vboxmanage.exe" list ostypes - list supported vbox O/S types
+
+Template details - "variables"
+An array of one or more key/value strings that defines user variables contained in the template
+
+  "variables": {
+    "name": "payload",
+    "cpu_cores": "2",
+    "memory": "2048",
+    "disk_size": "40960",
+    "headless": "true",
+    "iso_checksum": "8acd2f56bfcba2f7ac74a7e4a5e565ce68c024c38525c0285573e41c86ae90c0",
+    "iso_checksum_type": "sha256",
+    "iso_url": "http://mirror.sov.uk.goscomb.net/ubuntu-releases/14.04/ubuntu-14.04.2-server-amd64.iso",
+    "ssh_username": "build",
+    "ssh_password": "build"
+  },
+
+Template details - "builders"
+An array of one or more objects that defines the builders that will be used to create machine images for this template
+The builder builds a virtual machine by creating a new virtual machine from scratch, booting it, installing an OS, provisioning software within the OS, 
+then shutting it down. The result of the VirtualBox builder is a directory containing all the files necessary to run the virtual machine portably.
+
+  "builders": [
+    {
+      "name": "payload",
+      "vm_name": "ubuntu-1404-payload",
+      "guest_additions_mode": "disable",
+      "boot_command": [
+        "<esc><esc><enter><wait>",
+        "/install/vmlinuz noapic preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/payload-preseed.cfg ",
+        "debian-installer=en_GB auto locale=en_GB kbd-chooser/method=uk ",
+        "hostname={{ .Name }} ",
+        "fb=false debconf/frontend=noninteractive ",
+        "keyboard-conf:wqiguration/modelcode=SKIP keyboard-configuration/layout=GB keyboard-configuration/variant=GB console-setup/ask_detect=false ",
+        "initrd=/install/initrd.gz -- <enter>"
+      ],
+      "boot_wait": "15s",
+      "disk_size": "{{user `disk_size`}}",
+      "guest_os_type": "Ubuntu_64",
+      "headless": "{{user `headless`}}",
+      "http_directory": "http",
+      "iso_checksum": "{{user `iso_checksum`}}",
+      "iso_checksum_type": "{{user `iso_checksum_type`}}",
+      "iso_url": "{{user `iso_url`}}",
+      "shutdown_command": "echo 'build' | sudo -S shutdown -P now",
+      "ssh_password": "{{user `ssh_username`}}",
+      "ssh_username": "{{user `ssh_password`}}",
+      "ssh_wait_timeout": "20m",
+      "type": "virtualbox-iso",
+      "vboxmanage": [
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--memory",
+          "{{user `memory`}}"
+        ],
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--cpus",
+          "{{user `cpu_cores`}}"
+        ]
+      ],
+      "virtualbox_version_file": ".vbox_version"
+    }
+  ],
+
+Template details - "provisioners"
+An array of one or more objects that defines the provisioners that will be used to install and configure software for the machines created by each of the builders
+
+  "provisioners": [
+
+    {
+      "execute_command": "echo 'build' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
+      "script": "scripts/payload_update.sh",
+      "type": "shell"
+    },
+
+    {
+      "execute_command": "echo 'build' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
+      "script": "scripts/payload_packages.sh",
+      "type": "shell"
+    },
+
+  {
+  "type": "file",
+  "source": "scripts/payload_run.sh",
+  "destination": "/tmp/payload_run.sh"
+  },
+
+  {
+  "type": "file",
+  "source": "scripts/deploy.sh",
+  "destination": "/tmp/deploy.sh"
+  },
+
+   {
+      "execute_command": "echo 'build' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
+      "script": "scripts/payload_pre.sh",
+      "type": "shell"
+    }
+  ]
+
+
+Build Gold Image for SSBT
+-------------------------
+login into build server
+user build 
+password build
+cd /home/build/packer_ssbt_terminal
+rm -rf output-*
+/opt/packer/packer build 1404_payload.json && /opt/packer/packer build 1404_shuttle.json
+umount /media/build/shuttle
+lsblk
+qemu-img convert output-shuttle/Ubuntu-1404-shuttle-disk1.vmdk -O raw /dev/sdc && sync
+eject /dev/sdc
+
+This
+----
+ "/install/vmlinuz noapic preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/shuttle-preseed.cfg ",
+Looks in ./http folder
+
+Full packer template
+--------------------
+
+{
+  "variables": {
+    "name": "payload",
+    "cpu_cores": "2",
+    "memory": "2048",
+    "disk_size": "40960",
+    "headless": "true",
+    "iso_checksum": "8acd2f56bfcba2f7ac74a7e4a5e565ce68c024c38525c0285573e41c86ae90c0",
+    "iso_checksum_type": "sha256",
+    "iso_url": "http://mirror.sov.uk.goscomb.net/ubuntu-releases/14.04/ubuntu-14.04.2-server-amd64.iso",
+    "ssh_username": "build",
+    "ssh_password": "build"
+  },
+  "builders": [
+    {
+      "name": "payload",
+      "vm_name": "ubuntu-1404-payload",
+      "guest_additions_mode": "disable",
+      "boot_command": [
+        "<esc><esc><enter><wait>",
+        "/install/vmlinuz noapic preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/payload-preseed.cfg ",
+        "debian-installer=en_GB auto locale=en_GB kbd-chooser/method=uk ",
+        "hostname={{ .Name }} ",
+        "fb=false debconf/fronten=d=noninteractive ",
+        "keyboard-configuration/modelcode=SKIP keyboard-configuration/layout=GB keyboard-configuration/variant=GB console-setup/ask_detect=false ",
+        "initrd=/install/initrd.gz -- <enter>"
+      ],
+      "boot_wait": "15s",
+      "disk_size": "{{user `disk_size`}}",
+      "guest_os_type": "Ubuntu_64",
+      "headless": "{{user `headless`}}",
+      "http_directory": "http",
+      "iso_checksum": "{{user `iso_checksum`}}",
+      "iso_checksum_type": "{{user `iso_checksum_type`}}",
+      "iso_url": "{{user `iso_url`}}",
+      "shutdown_command": "echo 'build' | sudo -S shutdown -P now",
+      "ssh_password": "{{user `ssh_username`}}",
+      "ssh_username": "{{user `ssh_password`}}",
+      "ssh_wait_timeout": "20m",
+      "type": "virtualbox-iso",
+      "vboxmanage": [
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--memory",
+          "{{user `memory`}}"
+        ],
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--cpus",
+          "{{user `cpu_cores`}}"
+        ]
+      ],
+      "virtualbox_version_file": ".vbox_version"
+    }
+  ],
+  "provisioners": [
+
+    {
+      "execute_command": "echo 'build' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
+      "script": "scripts/payload_update.sh",
+      "type": "shell"
+    },
+
+    {
+      "execute_command": "echo 'build' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
+      "script": "scripts/payload_packages.sh",
+      "type": "shell"
+    },
+
+  {
+  "type": "file",
+  "source": "scripts/payload_run.sh",
+  "destination": "/tmp/payload_run.sh"
+  },
+
+  {
+  "type": "file",
+  "source": "scripts/deploy.sh",
+  "destination": "/tmp/deploy.sh"
+  },
+
+   {
+      "execute_command": "echo 'build' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
+      "script": "scripts/payload_pre.sh",
+      "type": "shell"
+    }
+  ]
+}
