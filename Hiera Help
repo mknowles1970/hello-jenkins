@@ -1,0 +1,153 @@
+Default config file location
+----------------------------
+/etc/puppetlabs/puppet/hiera.yaml on *nix systems
+You can use the hiera_config setting in puppet.conf to specify a different config file.
+example
+---
+:backends:
+  - eyaml
+  - yaml
+:eyaml:
+  :datadir: /etc/puppet/hieradata
+  :pkcs7_private_key: /etc/puppet/secure/keys/private_key.pkcs7.pem
+  :pkcs7_public_key:  /etc/puppet/secure/keys/public_key.pkcs7.pem
+:yaml:
+  :datadir: /etc/puppet/hieradata
+:hierarchy:
+  - "%{::init_env}/%{::init_role}"
+  - "%{::init_role}"
+  - "%{::init_env}"
+  - common
+
+Check Hiera value after a puppet run
+------------------------------------
+hiera -c /etc/puppet/hiera.yaml job_scheduler::user::user ::init_env=dev2-dwh ::init_role=jobscheduler
+
+Hiera interpolation
+------------------- 
+# array
+apache-packages:
+    - apache2
+    - apache2-common
+    - apache2-utils
+
+# string
+apache-service: apache2
+
+# interpolated facter variable
+hosts_entry: "sandbox.%{::fqdn}"
+
+# hash
+sshd_settings:
+    root_allowed: "no"
+    password_allowed: "yes"
+
+# alternate hash notation
+sshd_settings: {root_allowed: "no", password_allowed: "yes"}
+
+# to return "true" or "false"
+sshd_settings: {root_allowed: no, password_allowed: yes}
+
+$::clientcert in Puppet is called ::clientcert in Hiera
+
+Interpolation tokens
+--------------------
+look like %{variable}, %{variable.subkey}, or %{function("input")}. That is, they consist of:
+
+A percent sign (%)
+An opening curly brace ({)
+One of:
+A variable name, optionally including any number of subkeys
+A lookup function and its input
+A closing curly brace (})
+
+hiera_include
+-------------
+Define your nodes outside of manifests. I'd recommend extlookup's successor, Hiera, but really any external node classifier would suffice to move your node data out of manifests.
+
+This is the recommended way to handle node definitions these days - from the docs:
+
+Most users in most situations should use include-like declarations and set parameter values in their external data. However, compatibility with earlier versions of Puppet may require compromises.
+
+Hiera's included in Puppet 3.0 - it needs to be installed separately in older versions. To set up Hiera to handle your node definitions, you'd want to do something along these lines:
+
+site.pp (the whole thing):
+hiera_include(classes)
+
+hiera.yaml:
+:backends:
+  - yaml
+
+:hierarchy:
+  - %{clientcert}
+  - os-%{osfamily}
+  - common
+
+:yaml:
+   :datadir: /etc/puppet/hieradata
+   # A good alternative if you want different node data based on environments:
+   #:datadir: /etc/puppet/environments/%{environment}/hieradata
+
+:puppet:
+   :datasource: data
+
+Now, Puppet will look in /etc/puppet/hieradata to pull data on your nodes. Say you have an ntp class you want on everything, and an apache class you only want on one specific node:
+
+/etc/puppet/hieradata/common.yaml:
+classes:
+  - ntp
+
+/etc/puppet/hieradata/nodename.example.com.yaml:
+classes:
+  - apache
+
+This array is aggregate - the nodename.example.com node will get both the ntp class from the common file and the apache class from its own file.
+
+Hiera also handles your class parameters for you. Say you have your apache class expecting a port parameter:
+class apache ( $port ) {
+  ...
+
+You can set this in your Hiera data files as well. If you want it to default to port 80..
+
+/etc/puppet/hieradata/common.yaml:
+classes:
+  - ntp
+
+apache::port: 80
+
+But you want to override that for nodename.example.com, setting it to 8080:
+
+/etc/puppet/hieradata/nodename.example.com.yaml:
+classes:
+  - apache
+
+apache::port: 8080
+
+Or, you can use that os-%{osfamily} from the hiera.yaml file for settings based on facts about a given node - the osfamily fact in this case.
+
+/etc/puppet/hieradata/os-debian.yaml:
+apache::package_name: apache2
+
+/etc/puppet/hieradata/os-redhat.yaml:
+apache::package_name: httpd
+
+(note that the parameter lookup behavior is a bit different if you're running a version older than 3.0, see here for details)
+
+This way, you have the ability to set included classes and parameter/variable settings at different scopes (all nodes, some nodes based on a fact, or one specific node) all in different files.
+
+To encrypt values - eyaml
+-------------------------
+, you need only the public key, so distribute it to anyone who needs to create encrypted values:
+
+$ eyaml encrypt -s 'password'
+
+This will generate an encrypted block that you can add as the value in any yaml file:
+
+main.yaml:
+nginx::credentials::user: slackey       #cleartext example value
+nginx::credentials::basic_auth : >      #encrypted example value
+ENC[PKCS7,Y22exl+OvjDe+drmik2XEeD3VQtl1uZJXFFF2Nn
+   /HjZFXwcXRtTlzewJLc+/gox2IfByQRhsI/AgogRfYQKocZg
+   IZGeunzwhqfmEtGiqpvJJQ5wVRdzJVpTnANBA5qxeA==]
+
+ 
