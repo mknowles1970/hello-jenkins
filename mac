@@ -1,0 +1,136 @@
+Keyboard Short-cuts
+-------------------
+Full Screen Shot - Command shift 3
+Partial Screen Shot - Command shift 4
+Specific window - Command shift 4 spacebar
+Search bar - Command space
+
+Track Pad - Gestures
+--------------------
+Finder - System Preferences - Track Pad
+Tap once - Single click
+Two fingers tap - secondary select
+Three finger lookup - word dictionary lookup
+Three finger drag - drags current window
+Two finger scroll - direction scrolling
+Two finger pinch - zoom in zoom out
+Two finger rotate - rotate selection
+Two finger swipe - swipe left/right
+Three Finger swipe - Full screen swipe
+Four Finger Swipe up - Mission Control
+Three Finger Pitch - Launch Pad
+Three Finger Spread - Show Desktop
+
+Setup Hot Corners
+-----------------
+Finder - system preference - mission control - hot corners
+
+Batch Rename
+------------
+highlight all files - right click or double finger
+then select rename (x) items on sidebar menu
+
+Air Drop file sharing
+---------------------
+ipad - swipe up - select airdrop
+on imac - command shift R
+drag and drop
+
+LauchPad
+--------
+F4 or select the rocket icon on the dock
+click on app or start typing the name of the app
+To group apps - drop one on top of another
+
+Software Installation
+---------------------
+Once downloaded in finder drag the application icon to the "Applications" entry on the right
+
+Terminal
+--------
+Command T - new terminal
+Command W - close a terminal
+Command D - open them up side be side
+Command [ - toggle between terminals
+
+Installing - Homebrew installer
+-------------------------------
+xcode-select --install
+www.brew.sh
+copy command on webpage
+run it in a terminal
+brew help
+brew cask
+
+Show hidden files
+-----------------
+from terminal
+defaults write com.apple.finder AppleShowFiles TRUE;
+right click finder - reload
+
+Install Sublime Text Editor
+---------------------------
+brew install Caskroom/versions/sublime-text3
+
+Install Google Hangouts
+-----------------------
+brew cask install google-hangouts
+
+Install Slack & Skype
+---------------------
+brew cask install slack
+brew cask install skype
+
+Install Java SDK
+----------------
+brew cask install java
+
+Install Maven & Ant
+-------------------
+brew install maven
+brew install ant
+
+Install Ruby
+------------
+curl -sSL https://get.rvm.io | bash -s stable
+copy the "source" from the displayed text
+rvm install 2.3.0
+rvm list
+rvm usr ruby-2.3.0
+
+Install GIT
+-----------
+brew install git
+install sourcetree for GUI to Git
+
+Install MongoDB 
+----------------
+brew cask install mongodb
+for mongo install robomongo client
+
+Install Xcode
+-------------
+From the AppStore
+
+For MySQL use Sequel Pro GUI
+----------------------------
+
+Hadoop Learning VM
+------------------
+www.cloudera.com
+once started - user cloudera password cloudera
+localhost:8088/cluster
+hortonworks.com/downloads 
+localhost:8888
+
+SSH 
+---
+ssh-keygen -t rsa -C "email address"
+id_rsa - private
+id_rsa.pub - public
+
+Create a voice file
+-------------------
+say -v Fred -o test.mp4 "Hello World! I'm now talking to you"
+play the mp4 file ! (lots of voices to choose from)
+
